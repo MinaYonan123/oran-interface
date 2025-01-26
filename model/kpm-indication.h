@@ -403,13 +403,21 @@ private:
                                         const KpmIndicationMessageValues &values);
 
   std::pair<MeasurementInfoItem_t *, MeasurementDataItem_t *>
-  getMesInfoItem (const Ptr<MeasurementItem> &mesItem);
+  getMesInfoItem (const Ptr<MeasurementItem> &mesItem, const OCTET_STRING_t &IMSI);
 
   MeasurementDataItem_t *getMesDataItem (const double &realVal);
-  MeasurementDataItem_t *getMesDataItem (const MeasResultListNR *_measResultListNR);
-  MeasurementDataItem_t *getMesDataItem (const MeasResultServMOList *_MeasResultServMOList);
+  MeasurementDataItem_t *getMesDataItem (const MeasResultListNR *_measResultListNR,
+                                         const OCTET_STRING_t &IMSI,
+                                         MeasurementType_t *measurmentType);
+  MeasurementDataItem_t *getMesDataItem (const MeasResultServMOList *_MeasResultServMOList,
+                                         const OCTET_STRING_t &IMSI,
+                                         MeasurementType_t *measurmentType);
 
   void FillUeID (UEID_t *ue_ID, Ptr<MeasurementItemList> ueIndication);
+
+  void updateServingMsg (MeasurementType_t *measurmentType, const int &cellID,
+                         const OCTET_STRING_t &IMSI);
+  void updateNeighMsg (MeasurementType_t *measurmentType, const OCTET_STRING_t &IMSI);
 };
 } // namespace ns3
 

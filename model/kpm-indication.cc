@@ -601,7 +601,8 @@ KpmIndicationMessage::FillODuContainer (PF_Container_t *ranContainer,
 // std::mutex KpmIndicationMessage::mtx;
 
 std::pair<MeasurementInfoItem_t *, MeasurementDataItem_t *>
-KpmIndicationMessage::getMesInfoItem (const Ptr<MeasurementItem> &mesItem)
+KpmIndicationMessage::getMesInfoItem (const Ptr<MeasurementItem> &mesItem,
+                                      const OCTET_STRING_t &IMSI)
 {
 
   // // 1. Adding a measurement values(item) to the packet.
@@ -644,7 +645,6 @@ KpmIndicationMessage::getMesInfoItem (const Ptr<MeasurementItem> &mesItem)
 
             // Fill Neighbours cells of 5G, MeasResultNeighCells_PR_measResultListNR
             L3_RRC_Measurements *rrc = item.pmVal.choice.valueRRC;
-
             if (measName == "HO.TrgtCellQual.RS-SINR.UEID")
               {
                 if (rrc->measResultNeighCells != nullptr &&
@@ -657,7 +657,8 @@ KpmIndicationMessage::getMesInfoItem (const Ptr<MeasurementItem> &mesItem)
                           {
                             MeasResultListNR *_measResultListNR =
                                 rrc->measResultNeighCells->choice.measResultListNR;
-                            measureDataItem = getMesDataItem (_measResultListNR);
+                            measureDataItem =
+                                getMesDataItem (_measResultListNR, IMSI, measurmentType);
                           }
 
                     } catch (const std::exception &e)
@@ -666,6 +667,7 @@ KpmIndicationMessage::getMesInfoItem (const Ptr<MeasurementItem> &mesItem)
                     }
                   }
               }
+            // Fill Serving cells of 5G, ServingCellMeasurements_PR_nr_measResultServingMOList
             else if (measName == "HO.SrcCellQual.RS-SINR.UEID")
               {
                 if (rrc->servingCellMeasurements != nullptr &&
@@ -681,7 +683,8 @@ KpmIndicationMessage::getMesInfoItem (const Ptr<MeasurementItem> &mesItem)
                           {
                             MeasResultServMOList *_MeasResultServMO =
                                 rrc->servingCellMeasurements->choice.nr_measResultServingMOList;
-                            measureDataItem = getMesDataItem (_MeasResultServMO);
+                            measureDataItem =
+                                getMesDataItem (_MeasResultServMO, IMSI, measurmentType);
                           }
                     } catch (const std::exception &e)
                       {
@@ -751,7 +754,8 @@ KpmIndicationMessage::getMesDataItem (const double &realVal)
 }
 
 MeasurementDataItem_t *
-KpmIndicationMessage::getMesDataItem (const MeasResultServMOList *_MeasResultServMOList)
+KpmIndicationMessage::getMesDataItem (const MeasResultServMOList *_MeasResultServMOList,
+                                      const OCTET_STRING_t &IMSI, MeasurementType_t *measurmentType)
 {
 
   MeasurementRecord_t *measure_record =
@@ -762,17 +766,19 @@ KpmIndicationMessage::getMesDataItem (const MeasResultServMOList *_MeasResultSer
 
   for (int i = 0; i < _MeasResultServMOList->list.count; i++)
     {
-      MeasurementRecordItem_t *measure_record_item1 =
-          (MeasurementRecordItem_t *) calloc (1, sizeof (MeasurementRecordItem_t));
-      measure_record_item1->present = MeasurementRecordItem_PR_integer;
-      measure_record_item1->choice.integer =
-          static_cast<unsigned long> (_MeasResultServMOList->list.array[i]->servCellId);
+      // MeasurementRecordItem_t *measure_record_item1 =
+      //     (MeasurementRecordItem_t *) calloc (1, sizeof (MeasurementRecordItem_t));
+      // measure_record_item1->present = MeasurementRecordItem_PR_integer;
+      // measure_record_item1->choice.integer =
+      //     static_cast<unsigned long> (_MeasResultServMOList->list.array[i]->servCellId);
 
-      MeasurementRecordItem_t *measure_record_item2 =
-          (MeasurementRecordItem_t *) calloc (1, sizeof (MeasurementRecordItem_t));
-      measure_record_item2->present = MeasurementRecordItem_PR_integer;
-      measure_record_item2->choice.integer = static_cast<unsigned long> (
-          *(_MeasResultServMOList->list.array[i]->measResultServingCell.physCellId));
+      updateServingMsg (measurmentType, _MeasResultServMOList->list.array[i]->servCellId, IMSI);
+
+      // MeasurementRecordItem_t *measure_record_item2 =
+      //     (MeasurementRecordItem_t *) calloc (1, sizeof (MeasurementRecordItem_t));
+      // measure_record_item2->present = MeasurementRecordItem_PR_integer;
+      // measure_record_item2->choice.integer = static_cast<unsigned long> (
+      //     *(_MeasResultServMOList->list.array[i]->measResultServingCell.physCellId));
 
       MeasurementRecordItem_t *measure_record_item3 =
           (MeasurementRecordItem_t *) calloc (1, sizeof (MeasurementRecordItem_t));
@@ -782,8 +788,8 @@ KpmIndicationMessage::getMesDataItem (const MeasResultServMOList *_MeasResultSer
                 ->measResultServingCell.measResult.cellResults.resultsSSB_Cell->sinr);
 
       // Stream measurement records to list.
-      ASN_SEQUENCE_ADD (&measure_record->list, measure_record_item1);
-      ASN_SEQUENCE_ADD (&measure_record->list, measure_record_item2);
+      // ASN_SEQUENCE_ADD (&measure_record->list, measure_record_item1);
+      // ASN_SEQUENCE_ADD (&measure_record->list, measure_record_item2);
       ASN_SEQUENCE_ADD (&measure_record->list, measure_record_item3);
     }
 
@@ -793,7 +799,8 @@ KpmIndicationMessage::getMesDataItem (const MeasResultServMOList *_MeasResultSer
 }
 
 MeasurementDataItem_t *
-KpmIndicationMessage::getMesDataItem (const MeasResultListNR *_measResultListNR)
+KpmIndicationMessage::getMesDataItem (const MeasResultListNR *_measResultListNR,
+                                      const OCTET_STRING_t &IMSI, MeasurementType_t *measurmentType)
 {
 
   MeasurementRecord_t *measure_record =
@@ -801,6 +808,8 @@ KpmIndicationMessage::getMesDataItem (const MeasResultListNR *_measResultListNR)
 
   MeasurementDataItem_t *measure_data_item =
       (MeasurementDataItem_t *) calloc (1, sizeof (MeasurementDataItem_t));
+
+  updateNeighMsg (measurmentType, IMSI);
 
   for (int i = 0; i < _measResultListNR->list.count; i++)
     {
@@ -842,26 +851,28 @@ KpmIndicationMessage::getMesDataItem (const MeasResultListNR *_measResultListNR)
 // 0.371 enbdev 2 UE 1 L3 serving SINR -0.616781 L3 serving SINR 3gpp 45
 // 0.371 enbdev 2 UE 1 L3 neigh 3 SINR -9.88701 sinr encoded 26 first insert
 
-std::string
-servingMsg (const int &cellID, const int &UeID)
+void
+KpmIndicationMessage::updateServingMsg (MeasurementType_t *measurmentType, const int &cellID,
+                                        const OCTET_STRING_t &IMSI)
 {
   // 0.371 enbdev 2 UE 3 L3 serving SINR 3.28529 L3 serving SINR 3gpp 53
   std::ostringstream oss;
   // L3servingSINR3gpp_cell_XX
   // L3servingSINR3gpp_cell_XX_UEID_XX
-  oss << "L3servingSINR3gpp_cell_" << cellID << "_UEID_" << UeID;
-  return oss.str ();
+  oss << "L3servingSINR3gpp_cell_" << cellID << "_UEID_" << IMSI.buf;
+  memcpy (measurmentType->choice.measName.buf, oss.str ().data (), oss.str ().size ());
+  measurmentType->choice.measName.size = oss.str ().size ();
 }
 
-std::string
-neighMsg (const int &cellID)
+void
+KpmIndicationMessage::updateNeighMsg (MeasurementType_t *measurmentType, const OCTET_STRING_t &IMSI)
 {
   // 0.371 enbdev 2 UE 1 L3 neigh 4 SINR -19.4777 sinr encoded 7 first insert
   std::ostringstream oss;
   // L3neighSINR_cell_XX
-  oss << "L3neighSINR_cell_" << cellID;
-  // return std::move (oss.str ());
-  return oss.str ();
+  oss << "L3neighSINRListOf_UEID_" << IMSI.buf;
+  memcpy (measurmentType->choice.measName.buf, oss.str ().data (), oss.str ().size ());
+  measurmentType->choice.measName.size = oss.str ().size ();
 }
 
 void
@@ -946,9 +957,10 @@ KpmIndicationMessage::FillKpmIndicationMessageFormat1 (
   MeasurementInfoList_t *infoList =
       (MeasurementInfoList_t *) calloc (1, sizeof (MeasurementInfoList_t));
   auto UE_MeasurementItems = ueIndication->GetItems ();
+  auto IMSI = ueIndication->GetId ();
   for (const auto &UE_MeasurementItem : UE_MeasurementItems)
     {
-      auto _pairInfo = getMesInfoItem (UE_MeasurementItem);
+      auto _pairInfo = getMesInfoItem (UE_MeasurementItem, IMSI);
 
       MeasurementInfoItem_t *infoItem = _pairInfo.first;
       MeasurementDataItem_t *measureDataItem = _pairInfo.second;
