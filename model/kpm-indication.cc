@@ -753,6 +753,7 @@ KpmIndicationMessage::getMesDataItem (const double &realVal)
   return measure_data_item;
 }
 
+// Fill Serving cells
 MeasurementDataItem_t *
 KpmIndicationMessage::getMesDataItem (const MeasResultServMOList *_MeasResultServMOList,
                                       const OCTET_STRING_t &IMSI, MeasurementType_t *measurmentType)
@@ -798,6 +799,7 @@ KpmIndicationMessage::getMesDataItem (const MeasResultServMOList *_MeasResultSer
   return measure_data_item;
 }
 
+// Fill Neighbours cells
 MeasurementDataItem_t *
 KpmIndicationMessage::getMesDataItem (const MeasResultListNR *_measResultListNR,
                                       const OCTET_STRING_t &IMSI, MeasurementType_t *measurmentType)
@@ -809,10 +811,13 @@ KpmIndicationMessage::getMesDataItem (const MeasResultListNR *_measResultListNR,
   MeasurementDataItem_t *measure_data_item =
       (MeasurementDataItem_t *) calloc (1, sizeof (MeasurementDataItem_t));
 
-  updateNeighMsg (measurmentType, IMSI);
 
   for (int i = 0; i < _measResultListNR->list.count; i++)
     {
+      if(*(_measResultListNR->list.array[i]->physCellId) < 0) {
+          updateNeighMsg (measurmentType, IMSI, *(_measResultListNR->list.array[i]->physCellId));
+          continue;
+      }
       MeasurementRecordItem_t *measure_record_item2 =
           (MeasurementRecordItem_t *) calloc (1, sizeof (MeasurementRecordItem_t));
       measure_record_item2->present = MeasurementRecordItem_PR_integer;
@@ -827,8 +832,8 @@ KpmIndicationMessage::getMesDataItem (const MeasResultListNR *_measResultListNR,
                 ->measResult.cellResults.resultsSSB_Cell->sinr); //(rand() % 256) + 0.1;
 
       // Stream measurement records to list.
-      ASN_SEQUENCE_ADD (&measure_record->list, measure_record_item2);
       ASN_SEQUENCE_ADD (&measure_record->list, measure_record_item);
+      ASN_SEQUENCE_ADD (&measure_record->list, measure_record_item2);
     }
 
   measure_data_item->measRecord = *measure_record;
@@ -865,12 +870,12 @@ KpmIndicationMessage::updateServingMsg (MeasurementType_t *measurmentType, const
 }
 
 void
-KpmIndicationMessage::updateNeighMsg (MeasurementType_t *measurmentType, const OCTET_STRING_t &IMSI)
+KpmIndicationMessage::updateNeighMsg (MeasurementType_t *measurmentType, const OCTET_STRING_t &IMSI, const int &cellID)
 {
   // 0.371 enbdev 2 UE 1 L3 neigh 4 SINR -19.4777 sinr encoded 7 first insert
   std::ostringstream oss;
   // L3neighSINR_cell_XX
-  oss << "L3neighSINRListOf_UEID_" << IMSI.buf;
+  oss << "L3neighSINRListOf_UEID_" << IMSI.buf << "_of_Cell_" << (-cellID);
   memcpy (measurmentType->choice.measName.buf, oss.str ().data (), oss.str ().size ());
   measurmentType->choice.measName.size = oss.str ().size ();
 }
@@ -979,7 +984,7 @@ KpmIndicationMessage::FillKpmIndicationMessageFormat1 (
   ind_msg_f_1->granulPeriod = granPeriodMS;
 
   // Print ASN from Indication Message, format 1.
-  NS_LOG_INFO (xer_fprint (stderr, &asn_DEF_E2SM_KPM_IndicationMessage_Format1, ind_msg_f_1));
+  // NS_LOG_INFO (xer_fprint (stderr, &asn_DEF_E2SM_KPM_IndicationMessage_Format1, ind_msg_f_1));
 }
 
 void

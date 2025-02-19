@@ -417,7 +417,7 @@ private:
 
   void updateServingMsg (MeasurementType_t *measurmentType, const int &cellID,
                          const OCTET_STRING_t &IMSI);
-  void updateNeighMsg (MeasurementType_t *measurmentType, const OCTET_STRING_t &IMSI);
+  void updateNeighMsg (MeasurementType_t *measurmentType, const OCTET_STRING_t &IMSI, const int &cellID);
 };
 } // namespace ns3
 
