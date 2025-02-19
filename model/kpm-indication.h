@@ -41,6 +41,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
+#include <any>
 
 extern "C" {
 #include "E2SM-KPM-RANfunction-Description.h"
@@ -90,7 +91,6 @@ extern "C" {
 #include "UEMeasurementReportItem.h"
 #include "UEID-GNB.h"
 }
-
 namespace ns3 {
 
 enum E2SM_KPM_IndicationMessage_FormatType {
@@ -298,8 +298,12 @@ public:
         m_cellMeasurementItems; //!< list of cell-specific Measurement Information Items
     std::set<Ptr<MeasurementItemList>> m_ueIndications; //!< list of Measurement Information Items
   };
-
-  KpmIndicationMessage (KpmIndicationMessageValues values);
+  
+   void SetSubscriptionRMap(const std::map<std::string, std::any>& newMap) 
+ {
+    SubscriptionR_map = newMap;
+ }
+  KpmIndicationMessage (KpmIndicationMessageValues values,const std::map<std::string, std::any> & s_map);
   ~KpmIndicationMessage ();
 
   void *m_buffer;
@@ -379,6 +383,7 @@ public:
 
   //==================================================================================
 private:
+  std::map<std::string, std::any> SubscriptionR_map;
   static void CheckConstraints (KpmIndicationMessageValues values);
   void FillPmContainer (PF_Container_t *ranContainer, Ptr<PmContainerValues> values);
   void FillOCuUpContainer (PF_Container_t *ranContainer, Ptr<OCuUpContainerValues> values);

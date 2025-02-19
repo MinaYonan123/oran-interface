@@ -72,6 +72,7 @@ extern "C" {
 #include "conversions.h"
 #include <assert.h>
 #include <cassert>
+#include <any>
 
 // #include "timing_ms.h"
 
@@ -353,9 +354,25 @@ KpmIndicationHeader::FillAndEncodeKpmRicIndicationHeader (E2SM_KPM_IndicationHea
   // TraceMessage (&asn_DEF_E2SM_KPM_IndicationHeader, header, "RIC Indication Header");
 }
 
-KpmIndicationMessage::KpmIndicationMessage (KpmIndicationMessageValues values)
+KpmIndicationMessage::KpmIndicationMessage (KpmIndicationMessageValues values,const std::map<std::string, std::any>& s_map) : SubscriptionR_map{s_map}
 {
   E2SM_KPM_IndicationMessage_t *descriptor = new E2SM_KPM_IndicationMessage_t ();
+  // printf("The map: %ld \n", s_map.size());
+  // for (const auto& pair : SubscriptionR_map) {
+  //   // Print the key
+  //   printf("The map2:\n");
+  //   printf("%s: ", pair.first.c_str());
+  //       if (pair.second.type() == typeid(int)) {
+  //           printf("%d\n", std::any_cast<int>(pair.second));
+  //       } else if (pair.second.type() == typeid(std::string)) {
+  //           printf("%s\n", std::any_cast<std::string>(pair.second).c_str());
+  //       } else if (pair.second.type() == typeid(double)) {
+  //           printf("%f\n", std::any_cast<double>(pair.second));
+  //       } else if (pair.second.type() == typeid(uint64_t)) {
+  //           printf("%lu\n", std::any_cast<uint64_t>(pair.second));
+  //       } else {
+  //           printf("Unknown type\n");
+  //       }}
   CheckConstraints (values);
   FillAndEncodeKpmIndicationMessage (descriptor, values);
   delete descriptor;
