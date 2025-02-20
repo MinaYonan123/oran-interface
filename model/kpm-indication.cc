@@ -354,7 +354,9 @@ KpmIndicationHeader::FillAndEncodeKpmRicIndicationHeader (E2SM_KPM_IndicationHea
   // TraceMessage (&asn_DEF_E2SM_KPM_IndicationHeader, header, "RIC Indication Header");
 }
 
-KpmIndicationMessage::KpmIndicationMessage (KpmIndicationMessageValues values,const std::map<std::string, std::any>& s_map) : SubscriptionR_map{s_map}
+KpmIndicationMessage::KpmIndicationMessage (KpmIndicationMessageValues values,
+                                            const std::map<std::string, std::any> &s_map)
+    : SubscriptionR_map{s_map}
 {
   E2SM_KPM_IndicationMessage_t *descriptor = new E2SM_KPM_IndicationMessage_t ();
   // printf("The map: %ld \n", s_map.size());
@@ -828,13 +830,13 @@ KpmIndicationMessage::getMesDataItem (const MeasResultListNR *_measResultListNR,
   MeasurementDataItem_t *measure_data_item =
       (MeasurementDataItem_t *) calloc (1, sizeof (MeasurementDataItem_t));
 
-
   for (int i = 0; i < _measResultListNR->list.count; i++)
     {
-      if(*(_measResultListNR->list.array[i]->physCellId) < 0) {
+      if (*(_measResultListNR->list.array[i]->physCellId) < 0)
+        {
           updateNeighMsg (measurmentType, IMSI, *(_measResultListNR->list.array[i]->physCellId));
           continue;
-      }
+        }
       MeasurementRecordItem_t *measure_record_item2 =
           (MeasurementRecordItem_t *) calloc (1, sizeof (MeasurementRecordItem_t));
       measure_record_item2->present = MeasurementRecordItem_PR_integer;
@@ -887,7 +889,8 @@ KpmIndicationMessage::updateServingMsg (MeasurementType_t *measurmentType, const
 }
 
 void
-KpmIndicationMessage::updateNeighMsg (MeasurementType_t *measurmentType, const OCTET_STRING_t &IMSI, const int &cellID)
+KpmIndicationMessage::updateNeighMsg (MeasurementType_t *measurmentType, const OCTET_STRING_t &IMSI,
+                                      const int &cellID)
 {
   // 0.371 enbdev 2 UE 1 L3 neigh 4 SINR -19.4777 sinr encoded 7 first insert
   std::ostringstream oss;
@@ -994,7 +997,16 @@ KpmIndicationMessage::FillKpmIndicationMessageFormat1 (
   // 3. Adding Granularity Period
   GranularityPeriod_t *granPeriodMS =
       (GranularityPeriod_t *) calloc (1, sizeof (GranularityPeriod_t));
-  *granPeriodMS = 100;
+  if (SubscriptionR_map.find ("Granularity Period") != SubscriptionR_map.end ())
+    {
+      *granPeriodMS = std::any_cast<GranularityPeriod_t> (SubscriptionR_map["Granularity Period"]);
+    }
+  else
+    {
+      // TODO: replace by global system preodicity(GranularityPeriod).
+      // TODO: Abort
+      *granPeriodMS = 100;
+    }
 
   ind_msg_f_1->measData = *measurementDataList;
   ind_msg_f_1->measInfoList = infoList;

@@ -298,12 +298,14 @@ public:
         m_cellMeasurementItems; //!< list of cell-specific Measurement Information Items
     std::set<Ptr<MeasurementItemList>> m_ueIndications; //!< list of Measurement Information Items
   };
-  
-   void SetSubscriptionRMap(const std::map<std::string, std::any>& newMap) 
- {
+
+  void
+  SetSubscriptionRMap (const std::map<std::string, std::any> &newMap)
+  {
     SubscriptionR_map = newMap;
- }
-  KpmIndicationMessage (KpmIndicationMessageValues values,const std::map<std::string, std::any> & s_map);
+  }
+  KpmIndicationMessage (KpmIndicationMessageValues values,
+                        const std::map<std::string, std::any> &s_map);
   ~KpmIndicationMessage ();
 
   void *m_buffer;
@@ -422,7 +424,8 @@ private:
 
   void updateServingMsg (MeasurementType_t *measurmentType, const int &cellID,
                          const OCTET_STRING_t &IMSI);
-  void updateNeighMsg (MeasurementType_t *measurmentType, const OCTET_STRING_t &IMSI, const int &cellID);
+  void updateNeighMsg (MeasurementType_t *measurmentType, const OCTET_STRING_t &IMSI,
+                       const int &cellID);
 };
 } // namespace ns3
 
