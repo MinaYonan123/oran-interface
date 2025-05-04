@@ -76,12 +76,10 @@ OctetString::GetValue ()
 }
 
 std::string OctetString::DecodeContent(){
-  int size = this->GetValue ().size;
-  char out[size + 1];
-  std::memcpy (out, this->GetValue ().buf, size);
-  out[size] = '\0';
-
-  return std::string (out);
+  size_t size = this->GetValue().size;
+std::vector<char> out(size);
+std::memcpy(out.data(), this->GetValue().buf, size);
+return std::string(out.begin(), out.end());
 }
 
 BitString::BitString (std::string value, size_t size)
