@@ -20,6 +20,7 @@ set(source_files
     helper/indication-message-helper.cc
     helper/lte-indication-message-helper.cc
     helper/mmwave-indication-message-helper.cc
+    helper/Lena-indication-message-helper.cc
 )
 
 # Define the header files
@@ -35,6 +36,7 @@ set(header_files
     helper/indication-message-helper.h
     helper/lte-indication-message-helper.h
     helper/mmwave-indication-message-helper.h
+    helper/Lena-indication-message-helper.h
 )
 
 # Define the test sources (empty if no tests are needed)
