@@ -30,7 +30,7 @@ LenaIndicationMessageHelper::LenaIndicationMessageHelper (IndicationMessageType 
 }   
 
 void
-LenaIndicationMessageHelper::AddCuUpUePmItem (std::string ueImsiComplete,
+LenaIndicationMessageHelper::AddPdcpUePmItem (std::string ueImsiComplete,
                                                 long txPdcpPduBytesNrRlc, long txPdcpPduNrRlc)
 {
   Ptr<MeasurementItemList> ueVal = Create<MeasurementItemList> (ueImsiComplete);
@@ -46,17 +46,54 @@ LenaIndicationMessageHelper::AddCuUpUePmItem (std::string ueImsiComplete,
 
   m_msgValues.m_ueIndications.insert (ueVal);
 }
+void
+LenaIndicationMessageHelper::AddPdcpCpUePmItem (){
+  std::cout << "[DEBUG] AddPdcpCpUePmItem called" << std::endl;
+}
 
 void
-LenaIndicationMessageHelper::FillCuUpValues (std::string plmId)
-{
-  FillBaseCuUpValues (plmId);
+LenaIndicationMessageHelper::AddRlcUePmItem (){
+  std::cout << "[DEBUG] AddRlcUePmItem called" << std::endl;
 }
+
 void
-LenaIndicationMessageHelper::FillCuCpValues (uint16_t numActiveUes)
-{
-  FillBaseCuCpValues (numActiveUes);
+LenaIndicationMessageHelper::AddMacUePmItem (){
+  std::cout << "[DEBUG] AddMacUePmItem called" << std::endl;
 }
+
+void
+LenaIndicationMessageHelper::AddPhyUePmItem (){
+  std::cout << "[DEBUG] AddPhyUePmItem called" << std::endl;
+}
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
+
+
+void
+LenaIndicationMessageHelper::AddPdcpGnbPmItem (){
+  std::cout << "[DEBUG] AddPdcpGnbPmItem called" << std::endl;
+}
+
+void
+LenaIndicationMessageHelper::AddPdcpCpGnbPmItem (){
+  std::cout << "[DEBUG] AddPdcpCpGnbPmItem called" << std::endl;
+}
+
+void
+LenaIndicationMessageHelper::AddRlcGnbPmItem (){
+  std::cout << "[DEBUG] AddRlcGnbPmItem called" << std::endl;
+}
+
+void
+LenaIndicationMessageHelper::AddMacGnbPmItem (){
+  std::cout << "[DEBUG] AddMacGnbPmItem called" << std::endl;
+}
+
+void
+LenaIndicationMessageHelper::AddPhyGnbPmItem (){
+  std::cout << "[DEBUG] AddPhyGnbPmItem called" << std::endl;
+}
+
 
 LenaIndicationMessageHelper::~LenaIndicationMessageHelper ()
 {
