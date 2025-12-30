@@ -16,6 +16,8 @@ set(source_files
     model/kpm-function-description.cc
     model/ric-control-message.cc
     model/ric-control-function-description.cc
+    model/ccc-function-description.cc
+    model/ccc-message.cc
     helper/oran-interface-helper.cc
     helper/indication-message-helper.cc
     helper/lte-indication-message-helper.cc
@@ -32,6 +34,8 @@ set(header_files
     model/kpm-function-description.h
     model/ric-control-message.h
     model/ric-control-function-description.h
+    model/ccc-function-description.h
+    model/ccc-message.h
     helper/oran-interface-helper.h
     helper/indication-message-helper.h
     helper/lte-indication-message-helper.h
