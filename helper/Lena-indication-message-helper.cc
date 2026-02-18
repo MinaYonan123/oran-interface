@@ -31,16 +31,19 @@ LenaIndicationMessageHelper::LenaIndicationMessageHelper (IndicationMessageType 
 
 void
 LenaIndicationMessageHelper::AddPdcpUePmItem (std::string ueImsiComplete,
-                                                long txPdcpPduBytesNrRlc, long txPdcpPduNrRlc)
+                                                long txPdcpPduBytesNrRlc, long txPdcpPduNrRlc, double pdcpThroughput)
 {
   Ptr<MeasurementItemList> ueVal = Create<MeasurementItemList> (ueImsiComplete);
   if (!m_reducedPmValues)
     { 
-      std::cout << "txPdcpPduBytesNrRlc"<< txPdcpPduBytesNrRlc << std ::endl;
-      // UE-specific PDCP PDU volume transmitted to NR gNB (Unit is Kbits)
+       std::cout << "[AddPdcpUePmItem] IMSI=" << ueImsiComplete << std::endl;
+       std::cout << "  Adding QosFlow.PdcpPduVolumeDL_Filter.UEID = " << txPdcpPduBytesNrRlc << std::endl;
       ueVal->AddItem<long> ("QosFlow.PdcpPduVolumeDL_Filter.UEID", txPdcpPduBytesNrRlc);
-  
-      // UE-specific number of PDCP PDUs split with NR gNB
+      
+      std::cout << "  Adding DLThroughput.UEID = " << pdcpThroughput << std::endl;
+      ueVal->AddItem<double> ("DLThroughput.UEID", pdcpThroughput);
+
+        std::cout << "  Adding DRB.PdcpPduNbrDl.Qos.UEID = " << txPdcpPduNrRlc << std::endl;
       ueVal->AddItem<long> ("DRB.PdcpPduNbrDl.Qos.UEID", txPdcpPduNrRlc);
     }
 
@@ -70,8 +73,21 @@ LenaIndicationMessageHelper::AddPhyUePmItem (){
 
 
 void
-LenaIndicationMessageHelper::AddPdcpGnbPmItem (){
-  std::cout << "[DEBUG] AddPdcpGnbPmItem called" << std::endl;
+LenaIndicationMessageHelper::AddPHYGnbConfiguration (uint16_t numActiveUes, uint16_t cellId, uint16_t portsOn, uint16_t portsOff){
+  std::cout << "[DEBUG] AddPHYGnbConfiguration called" << std::endl;
+    // Create a cell-level measurement item list (empty IMSI string for cell-level)
+    Ptr<MeasurementItemList> cellVal = Create<MeasurementItemList> ("");
+  
+    if (!m_reducedPmValues)
+    {
+      // Add RRC connections (number of active UEs) 
+      cellVal->AddItem<long> ("CellId", cellId);
+      cellVal->AddItem<long> ("RRCEstabConn", numActiveUes);
+      cellVal->AddItem<long> ("Old.PortsOn", portsOn);
+      cellVal->AddItem<long> ("Old.PortsOff", portsOff);
+    }
+    
+    m_msgValues.m_ueIndications.insert (cellVal);
 }
 
 void

@@ -630,7 +630,23 @@ KpmIndicationMessage::getMesInfoItem (const Ptr<MeasurementItem> &mesItem,
   auto item = mesItem->GetValue ();
 
   MeasurementType_t *measurmentType = (MeasurementType_t *) calloc (1, sizeof (MeasurementType_t));
-  *measurmentType = item.pmType;
+  measurmentType->present = item.pmType.present;
+
+  if (item.pmType.present == MeasurementType_PR_measName)
+  {
+    // Deep copy the measurement name buffer
+    measurmentType->choice.measName.buf = 
+        (uint8_t *) calloc (item.pmType.choice.measName.size, sizeof (uint8_t));
+    measurmentType->choice.measName.size = item.pmType.choice.measName.size;
+    memcpy (measurmentType->choice.measName.buf, 
+            item.pmType.choice.measName.buf, 
+            item.pmType.choice.measName.size);  
+  }
+  else
+  {
+    // For other types, shallow copy is okay
+    *measurmentType = item.pmType;
+  }
 
   if (item.pmType.present == MeasurementType_PR_measName)
     {

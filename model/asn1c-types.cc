@@ -809,12 +809,22 @@ MeasurementItem::MeasurementItem (std::string name)
 
   m_measName =
       (MeasurementTypeName_t *) calloc (1, sizeof (MeasurementTypeName_t));
-  m_measName->buf = (uint8_t *) calloc (1, sizeof (OCTET_STRING));
+  m_measName->buf = (uint8_t *) calloc (name.length() + 1, sizeof (uint8_t));
   m_measName->size = name.length ();
   memcpy (m_measName->buf, name.c_str (), m_measName->size);
 
-  m_measurementItem->pmType.choice.measName = *m_measName;
-  m_measurementItem->pmType.present = MeasurementType_PR_measName;
+  m_measurementItem->pmType.choice.measName.buf = 
+  (uint8_t *) calloc (name.length() + 1, sizeof (uint8_t));
+m_measurementItem->pmType.choice.measName.size = name.length();
+memcpy (m_measurementItem->pmType.choice.measName.buf, name.c_str(), name.length());
+
+m_measurementItem->pmType.present = MeasurementType_PR_measName;
+
+  // DEBUG: Print what we just created
+  std::cout << "[MeasurementItem CTOR] Created item with name: '" << name 
+            << "' buf=" << (void*)m_measName->buf 
+            << " m_item.pmType.choice.measName.buf=" 
+            << (void*)m_measurementItem->pmType.choice.measName.buf << std::endl;
 }
 
 MeasurementItem::MeasurementItem (std::string name, long value) : MeasurementItem (name)
