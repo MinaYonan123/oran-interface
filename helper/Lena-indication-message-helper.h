@@ -12,12 +12,12 @@ public:
    ~LenaIndicationMessageHelper ();
 
 
-  void AddPdcpUePmItem (std::string ueImsiComplete, long txPdcpPduBytesNrRlc, long txPdcpPduNrRlc);
+  void AddPdcpUePmItem (std::string ueImsiComplete, long txPdcpPduBytesNrRlc, long txPdcpPduNrRlc, double pdcpThroughput);
   void AddPdcpCpUePmItem ();
   void AddRlcUePmItem ();
   void AddMacUePmItem ();
   void AddPhyUePmItem ();
-  void AddPdcpGnbPmItem ();
+  void AddPHYGnbConfiguration (uint16_t numActiveUes, uint16_t cellId, uint16_t portsOn, uint16_t portsOff);
   void AddPdcpCpGnbPmItem ();
   void AddRlcGnbPmItem ();
   void AddMacGnbPmItem ();
