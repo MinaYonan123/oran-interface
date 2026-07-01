@@ -111,6 +111,29 @@ LenaIndicationMessageHelper::AddPhyGnbPmItem (){
 }
 
 
+void
+LenaIndicationMessageHelper::AddPhyKpiItem (const std::string& kpiName,
+                                             double value,
+                                             uint64_t imsi,
+                                             uint16_t cellId)
+{
+  // Build a key that matches what GetImsiString() produces in NrGnbNetDevice:
+  // cell-level/global KPIs (imsi == 0) use an empty key string.
+  std::string key = (imsi == 0) ? "" : std::to_string (imsi);
+
+  Ptr<MeasurementItemList> ueVal = Create<MeasurementItemList> (key);
+  if (!m_reducedPmValues)
+    {
+      std::cout << "[AddPhyKpiItem] imsi=" << imsi
+                << " cell=" << cellId
+                << " kpi=" << kpiName
+                << " val=" << value << std::endl;
+      ueVal->AddItem<double> (kpiName, value);
+    }
+
+  m_msgValues.m_ueIndications.insert (ueVal);
+}
+
 LenaIndicationMessageHelper::~LenaIndicationMessageHelper ()
 {
 }
