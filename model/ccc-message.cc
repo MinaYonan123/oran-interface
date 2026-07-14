@@ -229,158 +229,152 @@
    }
  }
  
- void
- CccControlMessage::ParseCellControlInfo()
- {
-   NS_LOG_FUNCTION(this);
-   
-   try
-   {
-       // E2SM-CCC Control Message Format 2:
-       // {
-       //   "list_of_cells_controlled": [
-       //     {
-       //       "cell_global_id": { "nR-CGI": { "pLMNIdentity": "...", "nRCellIdentity": "..." } },
-       //       "list_of_configuration_structures": [
-       //         {
-       //           "ran_configuration_structure_name": "O-NESPolicy",
-       //           "old_values_of_attributes": { ... },
-       //           "new_values_of_attributes": { ... }
-       //         }
-       //       ]
-       //     }
-       //   ]
-       // }
-       
-       if (!m_controlMessage.contains("list_of_cells_controlled"))
-       {
-           NS_LOG_ERROR("[E2SM-CCC] Missing 'list_of_cells_controlled' in control message");
-           return;
-       }
-       
-       json cellsList = m_controlMessage["list_of_cells_controlled"];
-       
-       if (!cellsList.is_array())
-       {
-           NS_LOG_ERROR("[E2SM-CCC] 'list_of_cells_controlled' is not an array");
-           return;
-       }
-       
-       // Parse each cell
-       for (const auto& cellJson : cellsList)
-       {
-           CellControlInfo cellInfo;
-           
-           // Extract Cell Global ID
-           if (cellJson.contains("cell_global_id"))
-           {
-               json cgi = cellJson["cell_global_id"];
-               if (cgi.contains("nR-CGI"))
-               {
-                   json nrcgi = cgi["nR-CGI"];
-                   if (nrcgi.contains("pLMNIdentity"))
-                   {
-                       cellInfo.plmn_identity = nrcgi["pLMNIdentity"].get<std::string>();
-                       NS_LOG_DEBUG("[E2SM-CCC] PLMN Identity: " << cellInfo.plmn_identity);
-                   }
-                   if (nrcgi.contains("nRCellIdentity"))
-                   {
-                       cellInfo.nr_cell_identity = nrcgi["nRCellIdentity"].get<std::string>();
-                       NS_LOG_DEBUG("[E2SM-CCC] NR Cell Identity: " << cellInfo.nr_cell_identity);
-                   }
-               }
-           }
-           
-           // Extract List of Configuration Structures
-           if (cellJson.contains("list_of_configuration_structures"))
-           {
-               json configList = cellJson["list_of_configuration_structures"];
-               
-               if (configList.is_array())
-               {
-                   for (const auto& configJson : configList)
-                   {
-                       ConfigurationStructure config;
-                       
-                       // Extract structure name
-                       if (configJson.contains("ran_configuration_structure_name"))
-                       {
-                           config.ran_configuration_structure_name = 
-                               configJson["ran_configuration_structure_name"].get<std::string>();
-                           NS_LOG_INFO("[E2SM-CCC] Configuration Structure: " << 
-                                      config.ran_configuration_structure_name);
-                       }
-                       
-                       // Extract old values
-                       if (configJson.contains("old_values_of_attributes"))
-                       {
-                           config.old_values_of_attributes = configJson["old_values_of_attributes"];
-                           NS_LOG_DEBUG("[E2SM-CCC] Old values: " << 
-                                       config.old_values_of_attributes.dump(2));
-                       }
-                       
-                       // Extract new values
-                       if (configJson.contains("new_values_of_attributes"))
-                       {
-                           config.new_values_of_attributes = configJson["new_values_of_attributes"];
-                           NS_LOG_DEBUG("[E2SM-CCC] New values: " << 
-                                       config.new_values_of_attributes.dump(2));
-                           
-                           // Parse O-NESPolicy using proper classes from e2sm_ccc.hpp
-                           if (config.ran_configuration_structure_name == "O-NESPolicy")
-                           {
-                               try
-                               {
-                                   // Use the built-in from_json function provided by e2sm_ccc.hpp
-                                   ::quicktype::ONesPolicyProperties onesPolicy = 
-                                       config.new_values_of_attributes.get<::quicktype::ONesPolicyProperties>();
-                                   
-                                   config.new_ones_policy = onesPolicy;
-                                   NS_LOG_INFO("[E2SM-CCC] Successfully parsed new O-NESPolicy using e2sm_ccc.hpp classes");
-                               }
-                               catch (const std::exception& e)
-                               {
-                                   NS_LOG_ERROR("[E2SM-CCC] Failed to parse new O-NESPolicy: " << e.what());
-                                   NS_LOG_ERROR("[E2SM-CCC] JSON content: " << config.new_values_of_attributes.dump(2));
-                               }
-                           }
-                       }
-                       
-                       // Parse old O-NESPolicy if present
-                       if (configJson.contains("old_values_of_attributes") && 
-                           config.ran_configuration_structure_name == "O-NESPolicy")
-                       {
-                           try
-                           {
-                               // Use the built-in from_json function provided by e2sm_ccc.hpp
-                               ::quicktype::ONesPolicyProperties onesPolicy = 
-                                   config.old_values_of_attributes.get<::quicktype::ONesPolicyProperties>();
-                               
-                               config.old_ones_policy = onesPolicy;
-                               NS_LOG_INFO("[E2SM-CCC] Successfully parsed old O-NESPolicy using e2sm_ccc.hpp classes");
-                           }
-                           catch (const std::exception& e)
-                           {
-                               NS_LOG_ERROR("[E2SM-CCC] Failed to parse old O-NESPolicy: " << e.what());
-                           }
-                       }
-                       
-                       cellInfo.configuration_structures.push_back(config);
-                   }
-               }
-           }
-           
-           m_cellsControlled.push_back(cellInfo);
-       }
-       
-       NS_LOG_INFO("[E2SM-CCC] Successfully parsed " << m_cellsControlled.size() << 
-                   " cells with control information");
-   }
-   catch (const json::exception& e)
-   {
-       NS_LOG_ERROR("[E2SM-CCC] Error parsing cell control info: " << e.what());
-   }
- }
+// Helper: return the value of the first matching key found in a JSON object.
+// Tries camelCase first (used by the xApp), then snake_case (backward compat).
+static const json*
+JsonGet(const json& obj, const std::string& camel, const std::string& snake)
+{
+    if (obj.contains(camel)) return &obj.at(camel);
+    if (obj.contains(snake)) return &obj.at(snake);
+    return nullptr;
+}
+
+void
+CccControlMessage::ParseCellControlInfo()
+{
+  NS_LOG_FUNCTION(this);
+  
+  try
+  {
+      // Accepts both camelCase (xApp) and snake_case (legacy) key names.
+      const json* cellsListPtr = JsonGet(m_controlMessage,
+                                         "listOfCellsControlled",
+                                         "list_of_cells_controlled");
+      if (!cellsListPtr)
+      {
+          NS_LOG_ERROR("[E2SM-CCC] Missing 'listOfCellsControlled' in control message");
+          return;
+      }
+      
+      const json& cellsList = *cellsListPtr;
+      if (!cellsList.is_array())
+      {
+          NS_LOG_ERROR("[E2SM-CCC] 'listOfCellsControlled' is not an array");
+          return;
+      }
+      
+      for (const auto& cellJson : cellsList)
+      {
+          CellControlInfo cellInfo;
+          
+          // Cell Global ID
+          const json* cgiPtr = JsonGet(cellJson, "cellGlobalId", "cell_global_id");
+          if (cgiPtr && cgiPtr->contains("nR-CGI"))
+          {
+              const json& nrcgi = (*cgiPtr)["nR-CGI"];
+              if (nrcgi.contains("pLMNIdentity"))
+              {
+                  cellInfo.plmn_identity = nrcgi["pLMNIdentity"].get<std::string>();
+                  NS_LOG_DEBUG("[E2SM-CCC] PLMN Identity: " << cellInfo.plmn_identity);
+              }
+              if (nrcgi.contains("nRCellIdentity"))
+              {
+                  cellInfo.nr_cell_identity = nrcgi["nRCellIdentity"].get<std::string>();
+                  NS_LOG_DEBUG("[E2SM-CCC] NR Cell Identity: " << cellInfo.nr_cell_identity);
+              }
+          }
+          
+          // Configuration Structures
+          const json* configListPtr = JsonGet(cellJson,
+                                              "listOfConfigurationStructures",
+                                              "list_of_configuration_structures");
+          if (configListPtr && configListPtr->is_array())
+          {
+              for (const auto& configJson : *configListPtr)
+              {
+                  ConfigurationStructure config;
+                  
+                  // Structure name
+                  const json* namePtr = JsonGet(configJson,
+                                                "ranConfigurationStructureName",
+                                                "ran_configuration_structure_name");
+                  if (namePtr)
+                  {
+                      config.ran_configuration_structure_name = namePtr->get<std::string>();
+                      NS_LOG_INFO("[E2SM-CCC] Configuration Structure: " <<
+                                  config.ran_configuration_structure_name);
+                  }
+                  
+                  // Old values
+                  const json* oldPtr = JsonGet(configJson,
+                                               "oldValuesOfAttributes",
+                                               "old_values_of_attributes");
+                  if (oldPtr)
+                  {
+                      config.old_values_of_attributes = *oldPtr;
+                      NS_LOG_DEBUG("[E2SM-CCC] Old values: " <<
+                                   config.old_values_of_attributes.dump(2));
+                  }
+                  
+                  // New values
+                  const json* newPtr = JsonGet(configJson,
+                                               "newValuesOfAttributes",
+                                               "new_values_of_attributes");
+                  if (newPtr)
+                  {
+                      config.new_values_of_attributes = *newPtr;
+                      NS_LOG_DEBUG("[E2SM-CCC] New values: " <<
+                                   config.new_values_of_attributes.dump(2));
+                      
+                      if (config.ran_configuration_structure_name == "O-NESPolicy")
+                      {
+                          try
+                          {
+                              config.new_ones_policy =
+                                  config.new_values_of_attributes
+                                        .get<::quicktype::ONesPolicyProperties>();
+                              NS_LOG_INFO("[E2SM-CCC] Parsed new O-NESPolicy");
+                          }
+                          catch (const std::exception& ex)
+                          {
+                              NS_LOG_WARN("[E2SM-CCC] Could not parse new O-NESPolicy via quicktype: "
+                                          << ex.what() << " (continuing with raw JSON)");
+                          }
+                      }
+                  }
+                  
+                  // Old O-NESPolicy
+                  if (oldPtr && config.ran_configuration_structure_name == "O-NESPolicy")
+                  {
+                      try
+                      {
+                          config.old_ones_policy =
+                              config.old_values_of_attributes
+                                    .get<::quicktype::ONesPolicyProperties>();
+                          NS_LOG_INFO("[E2SM-CCC] Parsed old O-NESPolicy");
+                      }
+                      catch (const std::exception& ex)
+                      {
+                          NS_LOG_WARN("[E2SM-CCC] Could not parse old O-NESPolicy via quicktype: "
+                                      << ex.what() << " (continuing with raw JSON)");
+                      }
+                  }
+                  
+                  cellInfo.configuration_structures.push_back(config);
+              }
+          }
+          
+          m_cellsControlled.push_back(cellInfo);
+      }
+      
+      NS_LOG_INFO("[E2SM-CCC] Successfully parsed " << m_cellsControlled.size() <<
+                  " cells with control information");
+  }
+  catch (const json::exception& e)
+  {
+      NS_LOG_ERROR("[E2SM-CCC] Error parsing cell control info: " << e.what());
+  }
+}
  
  uint32_t
  CccControlMessage::GetRicStyleType() const
