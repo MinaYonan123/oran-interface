@@ -38,7 +38,7 @@ public:
 
   void FillCuUpValues (std::string plmId);
 
-  void AddCuUpUePmItem (std::string ueImsiComplete, long txPdcpPduBytesNrRlc, long txPdcpPduNrRlc);
+  void AddCuUpUePmItem (std::string ueImsiComplete, long txPdcpPduBytesNrRlc, long txPdcpPduNrRlc,double txBytes);
 
   void FillCuCpValues (uint16_t numActiveUes);
   
